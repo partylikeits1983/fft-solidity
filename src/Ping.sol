@@ -2,15 +2,21 @@
 pragma solidity ^0.8.20;
 
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
+import "@uniswap/v3-core/contracts/UniswapV3Pool.sol";
+
 
 import "forge-std/console.sol";
 
 contract UNIdata {
-	using SafeERC20 for IERC20;
+
+	address owner;
+
 	ISwapRouter constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
 	constructor() {
 		owner = msg.sender;
+
+
 	}
 
 	modifier onlyOwner() {
@@ -19,7 +25,25 @@ contract UNIdata {
 	}
 
 	function getSeriesData() public onlyOwner {
+		address USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+		address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
+		uint24 fee = 500;
+
+		address poolAddress = PoolAddress.getPoolKey(USDC, WETH, fee);
+		UniswapV3Pool pool = UniswapV3Pool(poolAddress);
+
+		uint32[] memory secondsAgos = new uint32[](2);
+		secondsAgos[0] = 3600; // 1 hour
+		secondsAgos[1] = 0;
+
+		(int56[] tickCumulatives, uint160[] secondsPerLiquidityCumulativeX128s) = pool.observe(secondsAgos);
+
+		for (uint i = 0; i < tickCumulatives.length; i++) {
+			console.log(tickCumulatives[i]);
+		}
 		
+
 	}
 }
 

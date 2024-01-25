@@ -14,7 +14,7 @@ contract PingTest is Test {
 
 	function setUp() public {
 		ethFork = vm.createSelectFork(ETH_RPC);
-		data = new VaultArbitrage();
+		data = new UNIdata();
 	}
 
 	function testPing() public {
