@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity >=0.8.0 <0.9.0;
 
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/UniswapV3Pool.sol";
 
-
 import "forge-std/console.sol";
 
 contract UNIdata {
-
 	address owner;
 
 	ISwapRouter constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+	address private constant FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
 	constructor() {
 		owner = msg.sender;
-
-
 	}
 
 	modifier onlyOwner() {
@@ -30,20 +27,28 @@ contract UNIdata {
 
 		uint24 fee = 500;
 
-		address poolAddress = PoolAddress.getPoolKey(USDC, WETH, fee);
+		PoolAddress.PoolKey memory key = PoolAddress.getPoolKey(USDC, WETH, fee);
+
+		address poolAddress = PoolAddress.computeAddress(FACTORY, key);
+
 		UniswapV3Pool pool = UniswapV3Pool(poolAddress);
 
 		uint32[] memory secondsAgos = new uint32[](2);
 		secondsAgos[0] = 3600; // 1 hour
 		secondsAgos[1] = 0;
 
-		(int56[] tickCumulatives, uint160[] secondsPerLiquidityCumulativeX128s) = pool.observe(secondsAgos);
+		(int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) = pool.observe(
+			secondsAgos
+		);
 
 		for (uint i = 0; i < tickCumulatives.length; i++) {
-			console.log(tickCumulatives[i]);
-		}
-		
+			int convertedValue = int(tickCumulatives[i]);
+			console.logInt(convertedValue);
 
+			console.log("HERE");
+		}
+
+		console.log("HERE");
 	}
 }
 
