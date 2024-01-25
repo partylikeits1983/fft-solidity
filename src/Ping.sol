@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.0;
 
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/UniswapV3Pool.sol";
+import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
+
+import { SD59x18 } from "@prb/math/src/SD59x18.sol";
+import { UD60x18 } from "@prb/math/src/UD60x18.sol";
 
 import "forge-std/console.sol";
 
@@ -21,7 +25,7 @@ contract UNIdata {
 		_;
 	}
 
-	function getSeriesData() public onlyOwner {
+	function getSeriesData() public view {
 		address USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 		address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
@@ -33,23 +37,59 @@ contract UNIdata {
 
 		UniswapV3Pool pool = UniswapV3Pool(poolAddress);
 
+		uint32 twapDuration = 1800;
+
 		uint32[] memory secondsAgos = new uint32[](2);
-		secondsAgos[0] = 3600; // 1 hour
+		secondsAgos[0] = twapDuration;
 		secondsAgos[1] = 0;
 
 		(int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) = pool.observe(
 			secondsAgos
 		);
 
-		for (uint i = 0; i < tickCumulatives.length; i++) {
-			int convertedValue = int(tickCumulatives[i]);
-			console.logInt(convertedValue);
 
-			console.log("HERE");
-		}
+		int tick = int24((tickCumulatives[1] - tickCumulatives[0]) / int32(twapDuration));
 
-		console.log("HERE");
+		console.logInt(tick);
+
+
+
+
+ 		// uint32 twapInterval = ;
+		uint160 sqrtPriceX96 = getSqrtTwapX96(address(pool), twapDuration);
+
+		console.log("SQRT PRICE", sqrtPriceX96);
+
+		uint price = getPriceX96FromSqrtPriceX96(sqrtPriceX96);
+		console.log("PRICE", price);
+
+
+		// console.log("HERE");
 	}
+
+    function getSqrtTwapX96(address uniswapV3Pool, uint32 twapInterval) public view returns (uint160 sqrtPriceX96) {
+        if (twapInterval == 0) {
+            // return the current price if twapInterval == 0
+            (sqrtPriceX96, , , , , , ) = IUniswapV3Pool(uniswapV3Pool).slot0();
+        } else {
+            uint32[] memory secondsAgos = new uint32[](2);
+            secondsAgos[0] = twapInterval; // from (before)
+            secondsAgos[1] = 0; // to (now)
+
+            (int56[] memory tickCumulatives, ) = IUniswapV3Pool(uniswapV3Pool).observe(secondsAgos);
+
+            // tick(imprecise as it's an integer) to price
+            sqrtPriceX96 = TickMath.getSqrtRatioAtTick(
+                int24((tickCumulatives[1] - tickCumulatives[0]) / int32(twapInterval))
+            );
+        }
+    }
+
+    function getPriceX96FromSqrtPriceX96(uint160 sqrtPriceX96) public pure returns(uint256 priceX96) {
+        return FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
+    }
+
+
 }
 
 library PoolAddress {
