@@ -13,7 +13,9 @@ contract PingTest is Test {
 	UNIdata data;
 
 	function setUp() public {
-		ethFork = vm.createSelectFork(ETH_RPC);
+		// ethFork = vm.createSelectFork(ETH_RPC);
+		vm.createSelectFork(ETH_RPC, 19000000 - 1);
+
 		data = new UNIdata();
 	}
 
