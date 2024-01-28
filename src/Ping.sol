@@ -59,9 +59,6 @@ contract UNIdata {
 			uint160 sqrtPriceX96 = getSqrtRatioAtTick(int24(tick));
 
 
-			
-
-
 			SD59x18 p1 = sd(1.0001e18).pow(sd(int(tick) * 1e18));
 			SD59x18 p2 = p1.mul(sd(10e18).pow(sd(-int(decimals))));
 			SD59x18 p3 = sd(1e18).div(p2);
